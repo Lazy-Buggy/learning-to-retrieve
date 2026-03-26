@@ -143,7 +143,9 @@ Output rows include:
 - `query`
 - `expected_answer`
 - `answer`
-- `metrics` (`retrieved_count`, `answer_nonempty`, etc.)
+- `metrics` (`retrieved_count`, `answer_nonempty`, `reciprocal_rank`, etc.)
+
+`run_eval` also prints aggregate `MRR` (Mean Reciprocal Rank) across all queries in the input file.
 
 ## Test Commands
 

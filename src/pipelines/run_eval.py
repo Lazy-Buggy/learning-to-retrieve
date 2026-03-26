@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 from src.config import load_settings
+from src.eval.metrics import reciprocal_rank_from_docs
 from src.graph.rag_graph import build_rag_graph
 from src.retrieval.retriever import Retriever
 
@@ -38,6 +39,7 @@ def main() -> None:
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     rows_written = 0
+    reciprocal_rank_total = 0.0
     with args.queries.open("r", encoding="utf-8") as source, args.output.open(
         "w", encoding="utf-8"
     ) as sink:
@@ -46,17 +48,26 @@ def main() -> None:
                 continue
             payload = json.loads(line)
             query = payload["query"]
+            expected_answer = payload.get("expected_answer", "")
             result = graph.invoke({"query": query, "top_k": top_k})
+            retrieved_docs = result.get("retrieved_docs", [])
+            reciprocal_rank = reciprocal_rank_from_docs(retrieved_docs, expected_answer)
+            reciprocal_rank_total += reciprocal_rank
+            row_metrics = dict(result.get("metrics", {}))
+            row_metrics["reciprocal_rank"] = reciprocal_rank
             output_row = {
                 "query": query,
-                "expected_answer": payload.get("expected_answer", ""),
+                "expected_answer": expected_answer,
                 "answer": result.get("answer", ""),
-                "metrics": result.get("metrics", {}),
+                "metrics": row_metrics,
             }
             sink.write(json.dumps(output_row, ensure_ascii=True) + "\n")
             rows_written += 1
 
     print(f"Wrote {rows_written} evaluation rows to {args.output}")
+    if rows_written > 0:
+        mrr = reciprocal_rank_total / rows_written
+        print(f"MRR: {mrr:.6f}")
 
 
 if __name__ == "__main__":
