@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 data/index/
 data/processed/eval_report.jsonl
+data/raw/quality-main/
+data/raw/natural-questions-master/
+data/raw/quality_sample.jsonl
+data/raw/nq_sample.jsonl

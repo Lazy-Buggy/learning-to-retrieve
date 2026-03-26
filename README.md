@@ -1,9 +1,7 @@
 # LangGraph RAG Foundation
 
-This project sets up a baseline Retrieval-Augmented Generation (RAG) system with a **LangGraph** execution flow and three training/evaluation datasets:
+This project sets up a baseline Retrieval-Augmented Generation (RAG) system with a **LangGraph** execution flow focused on **HotpotQA**:
 
-- [QuALITY](https://github.com/nyu-mll/quality)
-- [Natural Questions](https://github.com/google-research-datasets/natural-questions)
 - [HotpotQA](https://huggingface.co/datasets/hotpotqa/hotpot_qa)
 
 Milestone 1 scope is **foundation only**:
@@ -38,8 +36,7 @@ src/
   config.py
   datasets/
     schema.py
-    quality_loader.py
-    nq_loader.py
+    hotpot_hf_loader.py
     hotpot_loader.py
   processing/chunker.py
   indexing/vector_store.py
@@ -84,28 +81,15 @@ Place dataset files in `data/raw/` (or pass absolute paths directly).
 
 Expected file formats for this baseline:
 
-- **QuALITY**: JSONL (article + questions list per line)
-- **Natural Questions**: JSONL in original field style (`question_text`, `document_tokens`, `annotations`)
-- **HotpotQA**: JSON array file (records with `context`, `supporting_facts`)
-
-Detected local datasets in this project:
-
-- QuALITY: `data/raw/quality-main/data/v1.0.1/QuALITY.v1.0.1.train`
-- Natural Questions (open): `data/raw/natural-questions-master/nq_open/NQ-open.train.jsonl`
-
-Natural Questions note:
-
-- `NQ-open` files do **not** contain `document_tokens` context, so they cannot be used by this RAG index builder.
-- The `--nq` loader expects original NQ records with fields like `question_text`, `document_tokens`, and `annotations`.
-- If you pass `NQ-open` to `--nq`, the loader now fails fast with a clear error.
+- **HotpotQA via Hugging Face**: use `--hotpot-hf-config distractor|fullwiki`
+- **HotpotQA local JSON**: records with `context` and `supporting_facts`
 
 ## Build the Index
 
-Run on any combination of datasets:
+Run with Hugging Face HotpotQA:
 
 ```bash
 python -m src.pipelines.build_index \
-  --quality data/raw/quality-main/data/v1.0.1/QuALITY.v1.0.1.train \
   --hotpot-hf-config distractor \
   --split train
 ```
@@ -114,12 +98,6 @@ If you prefer local Hotpot JSON instead of Hugging Face, replace `--hotpot-hf-co
 
 ```bash
 --hotpot data/raw/hotpot_sample.json
-```
-
-If you later download original Natural Questions format (with `document_tokens`), add:
-
-```bash
---nq <path-to-original-nq-jsonl>
 ```
 
 You should see:
@@ -168,6 +146,4 @@ python -m pytest tests/test_loaders.py tests/test_chunking.py tests/test_graph_s
 ## Source References
 
 - RAG tutorial overview and optimization path: [RAG 从零到一：构建你的第一个检索增强生成系统](https://www.cnblogs.com/informatics/p/19647478)
-- QuALITY dataset repository: [nyu-mll/quality](https://github.com/nyu-mll/quality)
-- Natural Questions dataset repository: [google-research-datasets/natural-questions](https://github.com/google-research-datasets/natural-questions)
 - HotpotQA dataset card: [hotpotqa/hotpot_qa](https://huggingface.co/datasets/hotpotqa/hotpot_qa)
