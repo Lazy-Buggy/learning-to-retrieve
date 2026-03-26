@@ -41,6 +41,12 @@ def load_natural_questions(path: Path, split: str) -> list[NormalizedQARecord]:
             if not line.strip():
                 continue
             raw = json.loads(line)
+            if "document_tokens" not in raw:
+                raise ValueError(
+                    "Natural Questions record is missing 'document_tokens'. "
+                    "This appears to be NQ-Open format, which does not include source context for RAG indexing. "
+                    "Use original NQ records with document tokens."
+                )
             raw_tokens = raw.get("document_tokens", [])
             tokens = _document_from_tokens(raw_tokens)
             annotations = raw.get("annotations", [])

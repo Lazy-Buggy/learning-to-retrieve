@@ -88,16 +88,38 @@ Expected file formats for this baseline:
 - **Natural Questions**: JSONL in original field style (`question_text`, `document_tokens`, `annotations`)
 - **HotpotQA**: JSON array file (records with `context`, `supporting_facts`)
 
+Detected local datasets in this project:
+
+- QuALITY: `data/raw/quality-main/data/v1.0.1/QuALITY.v1.0.1.train`
+- Natural Questions (open): `data/raw/natural-questions-master/nq_open/NQ-open.train.jsonl`
+
+Natural Questions note:
+
+- `NQ-open` files do **not** contain `document_tokens` context, so they cannot be used by this RAG index builder.
+- The `--nq` loader expects original NQ records with fields like `question_text`, `document_tokens`, and `annotations`.
+- If you pass `NQ-open` to `--nq`, the loader now fails fast with a clear error.
+
 ## Build the Index
 
 Run on any combination of datasets:
 
 ```bash
 python -m src.pipelines.build_index \
-  --quality data/raw/quality_sample.jsonl \
-  --nq data/raw/nq_sample.jsonl \
-  --hotpot data/raw/hotpot_sample.json \
+  --quality data/raw/quality-main/data/v1.0.1/QuALITY.v1.0.1.train \
+  --hotpot-hf-config distractor \
   --split train
+```
+
+If you prefer local Hotpot JSON instead of Hugging Face, replace `--hotpot-hf-config distractor` with:
+
+```bash
+--hotpot data/raw/hotpot_sample.json
+```
+
+If you later download original Natural Questions format (with `document_tokens`), add:
+
+```bash
+--nq <path-to-original-nq-jsonl>
 ```
 
 You should see:

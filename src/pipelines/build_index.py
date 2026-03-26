@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 
 from src.config import load_settings
+from src.datasets.hotpot_hf_loader import load_hotpot_hf
 from src.datasets.hotpot_loader import load_hotpot
 from src.datasets.nq_loader import load_natural_questions
 from src.datasets.quality_loader import load_quality
@@ -14,6 +15,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--quality", type=Path, help="Path to QuALITY JSONL file.")
     parser.add_argument("--nq", type=Path, help="Path to Natural Questions JSONL file.")
     parser.add_argument("--hotpot", type=Path, help="Path to HotpotQA JSON file.")
+    parser.add_argument(
+        "--hotpot-hf-config",
+        type=str,
+        choices=["distractor", "fullwiki"],
+        help="Load HotpotQA directly from Hugging Face by config.",
+    )
     parser.add_argument("--split", type=str, default="train", help="Dataset split label.")
     parser.add_argument("--index-path", type=Path, default=None, help="Output index file path.")
     return parser.parse_args()
@@ -31,9 +38,13 @@ def main() -> None:
         records.extend(load_natural_questions(args.nq, split=args.split))
     if args.hotpot:
         records.extend(load_hotpot(args.hotpot, split=args.split))
+    if args.hotpot_hf_config:
+        records.extend(load_hotpot_hf(config=args.hotpot_hf_config, split=args.split))
 
     if not records:
-        raise SystemExit("No datasets provided. Use --quality, --nq, or --hotpot.")
+        raise SystemExit(
+            "No datasets provided. Use --quality, --nq, --hotpot, or --hotpot-hf-config."
+        )
 
     chunks = chunk_records(
         records,
