@@ -1,0 +1,20 @@
+[
+  {
+    "id": "hp1",
+    "question": "Which magazine was started first Arthur's Magazine or First for Women?",
+    "answer": "Arthur's Magazine",
+    "type": "comparison",
+    "level": "medium",
+    "supporting_facts": {
+      "title": ["Arthur's Magazine", "First for Women"],
+      "sent_id": [0, 0]
+    },
+    "context": {
+      "title": ["Arthur's Magazine", "First for Women"],
+      "sentences": [
+        ["Arthur's Magazine (1844-1846) was published in Philadelphia."],
+        ["First for Women started in 1989."]
+      ]
+    }
+  }
+]

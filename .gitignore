@@ -1,0 +1,6 @@
+.env
+__pycache__/
+.pytest_cache/
+*.pyc
+data/index/
+data/processed/eval_report.jsonl
