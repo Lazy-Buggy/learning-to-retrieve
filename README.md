@@ -20,7 +20,7 @@ This milestone does **not** include retriever or generator fine-tuning.
 flowchart LR
     rawData[RawDatasets] --> normalize[NormalizeLoaders]
     normalize --> chunk[ChunkPipeline]
-    chunk --> index[TFIDFIndex]
+    chunk --> index[PluggableRetrieverIndex]
 
     userQuery[UserQuery] --> ragGraph[LangGraph]
     ragGraph --> retrieve[RetrieveNode]
@@ -39,6 +39,8 @@ src/
     hotpot_hf_loader.py
     hotpot_loader.py
   processing/chunker.py
+  indexing/bm25_store.py
+  indexing/dense_lsa_store.py
   indexing/vector_store.py
   retrieval/retriever.py
   retrieval/plugins.py
@@ -120,8 +122,20 @@ python -m src.pipelines.run_eval \
 
 Retriever plugin note:
 
-- `--retriever` selects the retrieval backend plugin (current: `tfidf`).
+- `--retriever` selects the retrieval backend plugin.
 - `run_eval` can auto-detect plugin from index metadata if `--retriever` is omitted.
+- Available plugins:
+  - `tfidf`: sparse TF-IDF baseline
+  - `bm25`: lexical BM25 retrieval
+  - `dense_lsa`: lightweight dense semantic retrieval (TF-IDF + SVD)
+  - `hybrid_rrf`: BM25 + TF-IDF fusion with reciprocal-rank fusion
+  - `tfidf_rerank`: TF-IDF candidate retrieval + lexical reranking
+  - `iterative_hybrid`: two-hop retrieval based on `hybrid_rrf`
+
+Suggested starting point for HotpotQA:
+
+- `--retriever hybrid_rrf` for stronger baseline quality
+- `--retriever iterative_hybrid` for multi-hop oriented retrieval
 
 Output rows include:
 
@@ -133,14 +147,14 @@ Output rows include:
 ## Test Commands
 
 ```bash
-python -m pytest tests/test_loaders.py tests/test_chunking.py tests/test_graph_smoke.py
+python -m pytest tests/test_loaders.py tests/test_chunking.py tests/test_graph_smoke.py tests/test_retriever_plugins.py
 ```
 
 ## Notes and Next Steps
 
 ### Current baseline decisions
 
-- Retriever backend uses local TF-IDF vectors for low setup friction.
+- Retriever backends are plugin-based and local-first (no external vector DB required).
 - Answer generation is deterministic and context-based (no paid LLM dependency required).
 
 ### Recommended Milestone 2

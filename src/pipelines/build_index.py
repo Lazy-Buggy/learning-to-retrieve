@@ -9,7 +9,7 @@ from src.retrieval.retriever import Retriever, available_retrievers
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build a local TF-IDF RAG index.")
+    parser = argparse.ArgumentParser(description="Build a local RAG index with a pluggable retriever.")
     parser.add_argument("--hotpot", type=Path, help="Path to HotpotQA JSON file.")
     parser.add_argument(
         "--hotpot-hf-config",
