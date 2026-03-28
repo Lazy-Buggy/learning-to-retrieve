@@ -41,6 +41,7 @@ src/
   processing/chunker.py
   indexing/vector_store.py
   retrieval/retriever.py
+  retrieval/plugins.py
   graph/rag_graph.py
   eval/metrics.py
   pipelines/
@@ -91,6 +92,7 @@ Run with Hugging Face HotpotQA:
 ```bash
 python -m src.pipelines.build_index \
   --hotpot-hf-config distractor \
+  --retriever tfidf \
   --split train
 ```
 
@@ -115,6 +117,11 @@ python -m src.pipelines.run_eval \
   --queries data/processed/sample_queries.jsonl \
   --output data/processed/eval_report.jsonl
 ```
+
+Retriever plugin note:
+
+- `--retriever` selects the retrieval backend plugin (current: `tfidf`).
+- `run_eval` can auto-detect plugin from index metadata if `--retriever` is omitted.
 
 Output rows include:
 

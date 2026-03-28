@@ -4,7 +4,7 @@ from pathlib import Path
 
 from src.config import load_settings
 from src.graph.rag_graph import build_rag_graph
-from src.retrieval.retriever import Retriever
+from src.retrieval.retriever import Retriever, available_retrievers
 
 
 def parse_args() -> argparse.Namespace:
@@ -23,6 +23,13 @@ def parse_args() -> argparse.Namespace:
         help="Where to write evaluation output JSONL.",
     )
     parser.add_argument("--top-k", type=int, default=None, help="Retriever top-k override.")
+    parser.add_argument(
+        "--retriever",
+        type=str,
+        default=None,
+        choices=available_retrievers(),
+        help="Retriever backend plugin. If omitted, load from index metadata.",
+    )
     return parser.parse_args()
 
 
@@ -32,7 +39,7 @@ def main() -> None:
     index_path = args.index_path or settings.index_path
     top_k = args.top_k or settings.top_k
 
-    retriever = Retriever(index_path=index_path)
+    retriever = Retriever(index_path=index_path, plugin=args.retriever)
     retriever.load()
     graph = build_rag_graph(retriever)
 
@@ -57,6 +64,7 @@ def main() -> None:
             rows_written += 1
 
     print(f"Wrote {rows_written} evaluation rows to {args.output}")
+    print(f"Retriever backend: {retriever.plugin_name}")
 
 
 if __name__ == "__main__":
