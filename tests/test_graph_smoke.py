@@ -8,7 +8,7 @@ def test_graph_smoke_returns_answer_and_metrics(tmp_path):
         DocumentChunk(
             chunk_id="c1",
             text="Google was founded by Larry Page and Sergey Brin.",
-            metadata={"dataset": "natural_questions", "example_id": "nq1"},
+            metadata={"dataset": "hotpot_qa", "example_id": "hp0"},
         ),
         DocumentChunk(
             chunk_id="c2",

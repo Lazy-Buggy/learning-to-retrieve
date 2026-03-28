@@ -1,9 +1,7 @@
 # LangGraph RAG Foundation
 
-This project sets up a baseline Retrieval-Augmented Generation (RAG) system with a **LangGraph** execution flow and three training/evaluation datasets:
+This project sets up a baseline Retrieval-Augmented Generation (RAG) system with a **LangGraph** execution flow focused on **HotpotQA**:
 
-- [QuALITY](https://github.com/nyu-mll/quality)
-- [Natural Questions](https://github.com/google-research-datasets/natural-questions)
 - [HotpotQA](https://huggingface.co/datasets/hotpotqa/hotpot_qa)
 
 Milestone 1 scope is **foundation only**:
@@ -22,7 +20,7 @@ This milestone does **not** include retriever or generator fine-tuning.
 flowchart LR
     rawData[RawDatasets] --> normalize[NormalizeLoaders]
     normalize --> chunk[ChunkPipeline]
-    chunk --> index[TFIDFIndex]
+    chunk --> index[PluggableRetrieverIndex]
 
     userQuery[UserQuery] --> ragGraph[LangGraph]
     ragGraph --> retrieve[RetrieveNode]
@@ -38,12 +36,14 @@ src/
   config.py
   datasets/
     schema.py
-    quality_loader.py
-    nq_loader.py
+    hotpot_hf_loader.py
     hotpot_loader.py
   processing/chunker.py
+  indexing/bm25_store.py
+  indexing/dense_lsa_store.py
   indexing/vector_store.py
   retrieval/retriever.py
+  retrieval/plugins.py
   graph/rag_graph.py
   eval/metrics.py
   pipelines/
@@ -84,29 +84,17 @@ Place dataset files in `data/raw/` (or pass absolute paths directly).
 
 Expected file formats for this baseline:
 
-- **QuALITY**: JSONL (article + questions list per line)
-- **Natural Questions**: JSONL in original field style (`question_text`, `document_tokens`, `annotations`)
-- **HotpotQA**: JSON array file (records with `context`, `supporting_facts`)
-
-Detected local datasets in this project:
-
-- QuALITY: `data/raw/quality-main/data/v1.0.1/QuALITY.v1.0.1.train`
-- Natural Questions (open): `data/raw/natural-questions-master/nq_open/NQ-open.train.jsonl`
-
-Natural Questions note:
-
-- `NQ-open` files do **not** contain `document_tokens` context, so they cannot be used by this RAG index builder.
-- The `--nq` loader expects original NQ records with fields like `question_text`, `document_tokens`, and `annotations`.
-- If you pass `NQ-open` to `--nq`, the loader now fails fast with a clear error.
+- **HotpotQA via Hugging Face**: use `--hotpot-hf-config distractor|fullwiki`
+- **HotpotQA local JSON**: records with `context` and `supporting_facts`
 
 ## Build the Index
 
-Run on any combination of datasets:
+Run with Hugging Face HotpotQA:
 
 ```bash
 python -m src.pipelines.build_index \
-  --quality data/raw/quality-main/data/v1.0.1/QuALITY.v1.0.1.train \
   --hotpot-hf-config distractor \
+  --retriever tfidf \
   --split train
 ```
 
@@ -114,12 +102,6 @@ If you prefer local Hotpot JSON instead of Hugging Face, replace `--hotpot-hf-co
 
 ```bash
 --hotpot data/raw/hotpot_sample.json
-```
-
-If you later download original Natural Questions format (with `document_tokens`), add:
-
-```bash
---nq <path-to-original-nq-jsonl>
 ```
 
 You should see:
@@ -138,6 +120,23 @@ python -m src.pipelines.run_eval \
   --output data/processed/eval_report.jsonl
 ```
 
+Retriever plugin note:
+
+- `--retriever` selects the retrieval backend plugin.
+- `run_eval` can auto-detect plugin from index metadata if `--retriever` is omitted.
+- Available plugins:
+  - `tfidf`: sparse TF-IDF baseline
+  - `bm25`: lexical BM25 retrieval
+  - `dense_lsa`: lightweight dense semantic retrieval (TF-IDF + SVD)
+  - `hybrid_rrf`: BM25 + TF-IDF fusion with reciprocal-rank fusion
+  - `tfidf_rerank`: TF-IDF candidate retrieval + lexical reranking
+  - `iterative_hybrid`: two-hop retrieval based on `hybrid_rrf`
+
+Suggested starting point for HotpotQA:
+
+- `--retriever hybrid_rrf` for stronger baseline quality
+- `--retriever iterative_hybrid` for multi-hop oriented retrieval
+
 Output rows include:
 
 - `query`
@@ -150,14 +149,14 @@ Output rows include:
 ## Test Commands
 
 ```bash
-python -m pytest tests/test_loaders.py tests/test_chunking.py tests/test_graph_smoke.py
+python -m pytest tests/test_loaders.py tests/test_chunking.py tests/test_graph_smoke.py tests/test_retriever_plugins.py
 ```
 
 ## Notes and Next Steps
 
 ### Current baseline decisions
 
-- Retriever backend uses local TF-IDF vectors for low setup friction.
+- Retriever backends are plugin-based and local-first (no external vector DB required).
 - Answer generation is deterministic and context-based (no paid LLM dependency required).
 
 ### Recommended Milestone 2
@@ -170,6 +169,4 @@ python -m pytest tests/test_loaders.py tests/test_chunking.py tests/test_graph_s
 ## Source References
 
 - RAG tutorial overview and optimization path: [RAG 从零到一：构建你的第一个检索增强生成系统](https://www.cnblogs.com/informatics/p/19647478)
-- QuALITY dataset repository: [nyu-mll/quality](https://github.com/nyu-mll/quality)
-- Natural Questions dataset repository: [google-research-datasets/natural-questions](https://github.com/google-research-datasets/natural-questions)
 - HotpotQA dataset card: [hotpotqa/hotpot_qa](https://huggingface.co/datasets/hotpotqa/hotpot_qa)
