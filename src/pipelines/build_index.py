@@ -2,20 +2,20 @@ import argparse
 from pathlib import Path
 
 from src.config import load_settings
-from src.datasets.hotpot_hf_loader import load_hotpot_contexts_hf, load_hotpot_qa_records_hf
-from src.processing.chunker import chunk_records
+from src.datasets.hotpot_hf_loader import load_hotpot_contexts_hf
+from src.processing.chunker import chunk_contexts
 from src.retrieval.retriever import Retriever, available_retrievers
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build a local RAG index with a pluggable retriever.")
-    parser.add_argument(
-        "--hotpot-hf-config",
-        type=str,
-        choices=["distractor", "fullwiki"],
-        help="Load HotpotQA directly from Hugging Face by config.",
-    )
-    parser.add_argument("--split", type=str, default="train", help="Dataset split label.")
+    # parser.add_argument(
+    #     "--hotpot-hf-config",
+    #     type=str,
+    #     choices=["distractor", "fullwiki"],
+    #     help="Load HotpotQA directly from Hugging Face by config.",
+    # )
+    # parser.add_argument("--split", type=str, default="train", help="Dataset split label.")
     parser.add_argument("--index-path", type=Path, default=None, help="Output index file path.")
     parser.add_argument(
         "--retriever",
@@ -32,16 +32,13 @@ def main() -> None:
     settings = load_settings()
     index_path = args.index_path or settings.index_path
 
-    records = []
+    contexts = []
 
-    if args.hotpot_hf_config:
-        records.extend(load_hotpot_hf(config=args.hotpot_hf_config, split=args.split))
+    contexts.extend(load_hotpot_contexts_hf(config='fullwiki', split='train'))
+    contexts.extend(load_hotpot_contexts_hf(config='fullwiki', split='validation'))
 
-    if not records:
-        raise SystemExit("No datasets provided. Use --hotpot or --hotpot-hf-config.")
-
-    chunks = chunk_records(
-        records,
+    chunks = chunk_contexts(
+        contexts,
         chunk_size=settings.chunk_size,
         chunk_overlap=settings.chunk_overlap,
     )
@@ -51,7 +48,7 @@ def main() -> None:
 
     print(f"Built index at: {index_path}")
     print(f"Retriever backend: {retriever.plugin_name}")
-    print(f"Records processed: {len(records)}")
+    print(f"Records processed: {len(contexts)}")
     print(f"Chunks indexed: {len(chunks)}")
 
 

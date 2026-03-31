@@ -9,7 +9,6 @@ class NormalizedQARecord:
     example_id: str
     question: str
     answer: str
-    document: str
     metadata: dict[str, Any] = field(default_factory=dict)
     supporting_facts: list[dict[str, Any]] = field(default_factory=list)
 
@@ -18,6 +17,7 @@ class NormalizedQARecord:
 class NornalizedContextSentence:
     dataset: str
     split: str
+    example_id: str
     sent_id: str
     title: str
     text: str
