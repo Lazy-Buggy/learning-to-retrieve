@@ -1,11 +1,4 @@
-from pathlib import Path
-
-from src.datasets.hotpot_hf_loader import qa_records_from_hf_rows, context_sentences_from_hf_rows
-
-
-FIXTURES = Path(__file__).parent / "fixtures"
-
-
+from src.datasets.hotpot_hf_loader import context_sentences_from_hf_rows, qa_records_from_hf_rows
 
 def test_hotpot_hf_row_conversion():
     rows = [
@@ -24,9 +17,15 @@ def test_hotpot_hf_row_conversion():
     first = records[0]
     assert first.dataset == "hotpot_qa"
     assert first.metadata["source"] == "huggingface"
+    assert first.example_id == "row1"
+    assert first.question == "q"
+    assert first.answer == "a"
+    assert first.supporting_facts[0]["title"] == "T"
+    assert first.supporting_facts[0]["text"] == "S1"
 
     contexts = context_sentences_from_hf_rows(rows, split="train")
     assert len(contexts) == 2
-    first = records[0]
-    assert first.text == "S1"
-    assert first.title == "T"
+    first_context = contexts[0]
+    assert first_context.text == "S1"
+    assert first_context.title == "T"
+    assert first_context.dataset == "hotpot_qa"
